@@ -452,12 +452,25 @@ function Index()
 						}
 
 						$cont_file="<?php\n\n".implode("\n", $arr_cont_file)."\n?>\n";
+						
+						
+						$yes_dir=1;
 
 						if(!file_exists($dir_path))
 						{
 
-							mkdir($dir_path, 0755, true);
+							$yes_dir=mkdir($dir_path, 0755, true);
+
 			
+						}
+						
+						if(!$yes_dir)
+						{
+							
+							echo '<p>'.$lang['translations']['error_cannot_mkdir'].' '.$dir_path.'</p>';
+							
+							break;
+						
 						}
 
 						$file=fopen ($file_path, 'w');
@@ -486,7 +499,30 @@ function Index()
 					@unlink($base_path.'/application/media/translations/translations_'.$lang_translate.'.tar.gz');
 
 					//Create tar.gz
-
+					
+					if(!class_exists('PharData', false))
+					{
+					
+						echo '<p>'.$lang['translations']['you_need_phardata_class'].'</p>';
+					
+						break;
+					
+					}
+					
+					function check_error_phar()
+					{
+					
+						global $lang, $base_path;
+					
+						//echo '<p>'.$lang['translations']['error_cannot_write_translations_tar'].' '.$base_path.'/application/media/translations/'.'</p>';
+						show_error('<p>'.$lang['translations']['error_cannot_write_translations_tar'].'</p>', '<p>'.$lang['translations']['error_cannot_write_translations_tar'].' '.$base_path.'/application/media/translations/'.'</p>', $output_external='');
+					
+						die;
+					
+					}
+					
+					set_exception_handler('check_error_phar');
+						
 					$phar = new PharData($base_path.'/application/media/translations/translations_'.$lang_translate.'.tar');
 
 					// add all files in the project

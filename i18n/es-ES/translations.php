@@ -30,4 +30,10 @@ $lang['translations']['download_lang_file']='Descargar ficheros de lenguaje';
 
 $lang['translations']['no_exists_i18n_here']='El fichero de lenguaje no fue encontrado';
 
+$lang['translations']['you_need_phardata_class']='Este módulo necesita la clase PharData';
+
+$lang['translations']['error_cannot_mkdir']='Error: no puedo ejecutr mkdir';
+
+$lang['translations']['error_cannot_write_translations_tar']='Error: no puedo escribir paquete de traducciones';
+
 ?>

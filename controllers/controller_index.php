@@ -184,7 +184,8 @@ function Index()
 						if(!isset($arr_i18n[$key_default]))
 						{
 
-							$arr_i18n[$key_default]-=2;
+							$key_default-=2;
+							//$arr_i18n[$key_default]-=2;
 
 						}
 

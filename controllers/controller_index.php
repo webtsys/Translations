@@ -286,7 +286,7 @@ function Index()
 					$lang_file[$file_lang]=unserialize($ser_translation);*/
 
 					$lang_file=load_lang_db($_GET['module'], $file_lang, $_SESSION['translate_to']);
-
+					
 					//Load lang_file of translate_from
 
 					//$lang_from[$file_lang]=eval_lang($_GET['module'], $file_lang, $_POST['translate_from']);
@@ -297,7 +297,7 @@ function Index()
 
 					echo '<h3>'.$lang['translations']['translate'].' '.$file_lang.'</h3>';
 					
-					if(count($lang_file[$file_lang])==0)
+					if(count($lang_file)==0)
 					{
 
 						echo '<p>'.$lang['translations']['no_lang_variable_here'].'</p>';
@@ -310,34 +310,40 @@ function Index()
 						<?php
 
 						$z=0;
-
-						foreach($lang_file[$file_lang] as $name => $text)
+						
+						foreach(array_keys($lang_file) as $key_file_lang)
 						{
-
-							$danger='';
-
-							if($name==$text )
+							
+							foreach($lang_file[$key_file_lang] as $name => $text)
 							{
+								
 
-								if(isset($lang_from[$file_lang][$name]))
+								$danger='';
+
+								if($name==$text )
 								{
 
-									$text=$lang_from[$file_lang][$name];
+									if(isset($lang_from[$key_file_lang][$name]))
+									{
+
+										$text=$lang_from[$key_file_lang][$name];
+
+									}
+									else
+									{
+
+										$danger='<span class="error">'.$lang['translations']['error_field_probably_is_trash'].'</span>';
+
+									}
 
 								}
-								else
-								{
 
-									$danger='<span class="error">'.$lang['translations']['error_field_probably_is_trash'].'</span>';
+								echo '<p><label for="'.$name.'">'.$name.' '.$danger.':</label>'.TextAreaForm('lang['.$key_file_lang.']['.$name.']', '', $text).'</p>';
 
-								}
+								$z++;
 
 							}
-
-							echo '<p><label for="'.$name.'">'.$name.' '.$danger.':</label>'.TextAreaForm('lang['.$name.']', '', $text).'</p>';
-
-							$z++;
-
+							
 						}
 						?>
 						<?php set_csrf_key(); ?>
@@ -355,14 +361,12 @@ function Index()
 				$get['module']=check_name_lang($_GET['module']);
 				$get['lang']=check_name_lang($_GET['translate_to']);
 				
-				$url=make_fancy_url($base_url, 'translations', 'index', 'translate_post', array('translate_to' => $get['translate_to'], 'module' => $get['module'], 'file_lang' => $get['name']));
+				$url=make_fancy_url($base_url, 'translations', 'index', 'translate_post', array('translate_to' => $get['lang'], 'module' => $get['module'], 'file_lang' => $get['name']));
 
 				settype($_POST['lang'], 'array');
 
 				$post['translation']=$_POST['lang'];
-
-				//print_r($post['translation']);
-
+				
 				$model['translation']->reset_require();
 
 				if($model['translation']->update($post, 'where name="'.$get['name'].'" and module="'.$get['module'].'" and lang="'.$get['lang'].'"'))
@@ -393,6 +397,33 @@ function Index()
 				?>
 				<form method="post" action="<?php echo make_fancy_url($base_url, 'translations', 'index', 'translate_post', array( 'op' => 3)); ?>">
 				<?php echo $lang['translations']['translation']; ?>: <?php echo SelectForm('translation', '', $arr_lang_selected); ?> 
+				<?php
+				
+					$module_defined=array();
+				
+					$query=$model['module']->select('', array('name', 'admin_script'));
+					
+					while(list($module_name, $ser_admin_script)=webtsys_fetch_row($query))
+					{
+					
+						$arr_admin_script=unserialize($ser_admin_script);
+						
+						if( !isset($module_defined[$arr_admin_script[0]]) )
+						{
+					
+							?><p>
+							<?php echo $arr_admin_script[0]; ?>: <?php echo CheckBoxForm('module_selected['.$arr_admin_script[0].']', $class='', 1); ?>
+							</p>
+							<?php
+							
+							$module_defined[$arr_admin_script[0]]=1;
+						
+						}
+					
+					}
+					
+				
+				?>
 				<?php set_csrf_key(); ?>
 				<input type="submit" value="<?php echo $lang['common']['send']; ?>"/>
 				</form>	
@@ -409,9 +440,23 @@ function Index()
 				if(in_array($lang_translate, $arr_i18n))
 				{
 
+					//First, copy all files from lang..., after rewrite.
+				
 					//download translate...
+					
+					//Copy 
+					
+					//print_r($_POST['module_selected']);
+					
+					$arr_modules_selected_in_db=array();
+					
+					$arr_modules_selected=array_keys($_POST['module_selected']);
+					
+					$arr_modules_selected[]='\'\'';
+					
+					//print_r($arr_modules_selected);
 
-					$query=$model['translation']->select('where lang="'.$lang_translate.'"');
+					$query=$model['translation']->select('where lang="'.$lang_translate.'" and module IN (\''.implode('\', \'', $arr_modules_selected).'\')');
 
 					while($arr_fields=webtsys_fetch_array($query))
 					{
@@ -445,10 +490,14 @@ function Index()
 
 						$file_path=$dir_path.$arr_fields['name'].'.php';
 
-						foreach($arr_trans as $key_trans => $value_trans)
+						foreach(array_keys($arr_trans) as $key_file_lang)
 						{
+							foreach($arr_trans[$key_file_lang] as $key_trans => $value_trans)
+							{
 
-							$arr_cont_file[]='$lang[\''.$arr_fields['name'].'\'][\''.$key_trans.'\']=\''.$value_trans.'\';'."\n";
+								$arr_cont_file[]='$lang[\''.$key_file_lang.'\'][\''.$key_trans.'\']=\''.$value_trans.'\';'."\n";
+								
+							}
 
 						}
 
@@ -492,8 +541,55 @@ function Index()
 							fclose($file);
 						
 						}
+						
+						$arr_modules_selected_in_db[$arr_fields['module']]=1;
 
 					}
+					
+					//print_r($arr_modules_selected_in_db);
+					
+					//Know, need copy the rest of files translation...
+					
+					$arr_modules_final=array_diff($arr_modules_selected, array_keys($arr_modules_selected_in_db));
+					
+					unset($arr_modules_final[count($arr_modules_final)]);
+
+					foreach($arr_modules_final as $module_copy)
+					{
+					
+						$dir_path_base=$base_path.'modules/'.$module_copy.'/i18n/'.$lang_translate.'/';
+						$dir_path_copy=$base_path.'modules/translations/backup/modules/'.$module_copy.'/i18n/'.$lang_translate.'/';
+						
+						$yes_dir=mkdir($dir_path_copy, 0755, true);
+						
+						ob_start();
+						
+						passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
+						
+						$result_copy=ob_get_contents();
+						
+						ob_end_clean();
+						echo '<p>Copying '.$module_copy.'...</p>';
+					
+					}
+					
+					//Copy base files...
+					
+					/*$dir_path_base=$base_path.'/i18n/'.$lang_translate.'/';
+					$dir_path_copy=$base_path.'modules/translations/backup/i18n/'.$lang_translate.'/';
+					
+					$yes_dir=mkdir($dir_path_copy, 0755, true);
+						
+					ob_start();
+					
+					passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
+					
+					$result_copy=ob_get_contents();
+					
+					ob_end_clean();
+					echo '<p>Copying base files...</p>';*/
+					
+					//Know compressing directory...
 
 					//Delete old tars...
 
@@ -617,9 +713,9 @@ function eval_lang($module, $name, $language)
 
 	eval($file_cont);
 
-	settype($lang[$name], 'array');
+	settype($lang, 'array');
 
-	return $lang[$name];
+	return $lang;
 
 }
 
@@ -654,22 +750,27 @@ function load_lang_db($module, $file_lang, $language)
 
 	//Ugly hack why php serialize and cannot unserialize a valid string with '.
 
-	$lang_file[$file_lang]=unserialize(str_replace("'", "\'", $ser_translation));
-
+	$lang_file=unserialize(str_replace("'", "\'", $ser_translation));
+	
 	//Upgrade translations with new addings via check_language.php...
-
+	
 	$lang_adding=eval_lang($module, $file_lang, $language);
 	
-	foreach($lang_adding as $key_lang => $value_lang)
+	foreach(array_keys($lang_adding) as $key_file_lang)
 	{
 		
-		if(!isset($lang_file[$file_lang][$key_lang]))
+		foreach($lang_adding[$key_file_lang] as $key_lang => $value_lang)
 		{
+			
+			if(!isset($lang_file[$key_file_lang][$key_lang]))
+			{
+				
+				$lang_file[$key_file_lang][$key_lang]=$value_lang;
 
-			$lang_file[$file_lang][$key_lang]=$value_lang;
+			}
 
 		}
-
+		
 	}
 	
 	return $lang_file;
@@ -693,7 +794,7 @@ function clean_directory($dir_path_clean)
 		}
 	}
 
-	rmdir($dir_path_clean);
+	@rmdir($dir_path_clean);
 
 }
 

@@ -397,6 +397,9 @@ function Index()
 				?>
 				<form method="post" action="<?php echo make_fancy_url($base_url, 'translations', 'index', 'translate_post', array( 'op' => 3)); ?>">
 				<?php echo $lang['translations']['translation']; ?>: <?php echo SelectForm('translation', '', $arr_lang_selected); ?> 
+				<p>
+				<?php echo $lang['translations']['common_module']; ?>: <?php echo CheckBoxForm('module_selected[common]', $class='', 1); ?>
+				</p>
 				<?php
 				
 					$module_defined=array();

@@ -449,36 +449,82 @@ function Index()
 					
 					//Copy 
 					
-					//print_r($_POST['module_selected']);
-					
 					$arr_modules_selected_in_db=array();
 					
 					$arr_modules_selected=array_keys($_POST['module_selected']);
 					
-					$arr_modules_selected[]='\'\'';
+					//First, copy the common i18n files...
 					
-					//print_r($arr_modules_selected);
+					//now put the common i18n...
+					
+					if(in_array('common', $arr_modules_selected))
+					{
+					
+						$dir_path_base=$base_path.'i18n/'.$lang_translate.'/';
+						$dir_path_copy=$base_path.'modules/translations/backup/i18n/'.$lang_translate.'/';
+						
+						$yes_dir=mkdir($dir_path_copy, 0755, true);
+						
+						ob_start();
+						
+						passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
+						
+						$result_copy=ob_get_contents();
+						
+						ob_end_clean();
+						echo '<p>Copying common...</p>';
+					
+						//Now copy from db...
+					
+						$query=$model['translation']->select('where lang="'.$lang_translate.'" and module=""');
+						
+						while($arr_fields=webtsys_fetch_array($query))
+						{
+						
+							$arr_modules_selected_in_db=write_in_lang_file_from_db($arr_fields, $arr_modules_selected_in_db);
+						
+						}
+						
+						$key_common=array_search('common', $arr_modules_selected);
+						
+						unset($arr_modules_selected[$key_common]);
+						
+					}
+
+					//Now, copy the modules i18n files...
+					
+					$arr_modules_final=$arr_modules_selected;//array_diff($arr_modules_selected, array_keys($arr_modules_selected_in_db));
+					
+					unset($arr_modules_final[count($arr_modules_final)]);
+
+					foreach($arr_modules_final as $module_copy)
+					{
+					
+						$dir_path_base=$base_path.'modules/'.$module_copy.'/i18n/'.$lang_translate.'/';
+						$dir_path_copy=$base_path.'modules/translations/backup/modules/'.$module_copy.'/i18n/'.$lang_translate.'/';
+						
+						$yes_dir=mkdir($dir_path_copy, 0755, true);
+						
+						ob_start();
+						
+						passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
+						
+						$result_copy=ob_get_contents();
+						
+						ob_end_clean();
+						echo '<p>Copying '.$module_copy.'...</p>';
+					
+					}
+					
+					
+					$arr_modules_selected[]='nomodule';
 
 					$query=$model['translation']->select('where lang="'.$lang_translate.'" and module IN (\''.implode('\', \'', $arr_modules_selected).'\')');
 
 					while($arr_fields=webtsys_fetch_array($query))
 					{
 
-						/*
-						$model['translation']->components['name']=new CharField(255);
-						$model['translation']->components['name']->required=1;
-
-						$model['translation']->components['module']=new CharField(255);
-						$model['translation']->components['module']->required=1;
-
-						$model['translation']->components['translation']=new SerializeField();
-						$model['translation']->components['translation']->required=1;
-
-						$model['translation']->components['lang']=new CharField(255);
-						$model['translation']->components['lang']->required=1;
-						*/
-
-						$arr_trans=unserialize($arr_fields['translation']);
+						/*$arr_trans=unserialize($arr_fields['translation']);
 
 						$arr_cont_file=array();
 
@@ -545,53 +591,12 @@ function Index()
 						
 						}
 						
-						$arr_modules_selected_in_db[$arr_fields['module']]=1;
+						$arr_modules_selected_in_db[$arr_fields['module']]=1;*/
+						
+						$arr_modules_selected_in_db=write_in_lang_file_from_db($arr_fields, $arr_modules_selected_in_db);
 
 					}
-					
-					//print_r($arr_modules_selected_in_db);
-					
-					//Know, need copy the rest of files translation...
-					
-					$arr_modules_final=array_diff($arr_modules_selected, array_keys($arr_modules_selected_in_db));
-					
-					unset($arr_modules_final[count($arr_modules_final)]);
-
-					foreach($arr_modules_final as $module_copy)
-					{
-					
-						$dir_path_base=$base_path.'modules/'.$module_copy.'/i18n/'.$lang_translate.'/';
-						$dir_path_copy=$base_path.'modules/translations/backup/modules/'.$module_copy.'/i18n/'.$lang_translate.'/';
-						
-						$yes_dir=mkdir($dir_path_copy, 0755, true);
-						
-						ob_start();
-						
-						passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
-						
-						$result_copy=ob_get_contents();
-						
-						ob_end_clean();
-						echo '<p>Copying '.$module_copy.'...</p>';
-					
-					}
-					
-					//Copy base files...
-					
-					/*$dir_path_base=$base_path.'/i18n/'.$lang_translate.'/';
-					$dir_path_copy=$base_path.'modules/translations/backup/i18n/'.$lang_translate.'/';
-					
-					$yes_dir=mkdir($dir_path_copy, 0755, true);
-						
-					ob_start();
-					
-					passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
-					
-					$result_copy=ob_get_contents();
-					
-					ob_end_clean();
-					echo '<p>Copying base files...</p>';*/
-					
+										
 					//Know compressing directory...
 
 					//Delete old tars...
@@ -798,6 +803,84 @@ function clean_directory($dir_path_clean)
 	}
 
 	@rmdir($dir_path_clean);
+
+}
+
+function write_in_lang_file_from_db($arr_fields, $arr_modules_selected_in_db)
+{
+
+	global $lang, $base_path;
+
+	$arr_trans=unserialize($arr_fields['translation']);
+
+	$arr_cont_file=array();
+
+	$dir_path=$base_path.'modules/translations/backup/modules/'.$arr_fields['module'].'/i18n/'.$arr_fields['lang'].'/';
+
+	if($arr_fields['module']=='')
+	{
+
+		$dir_path=$base_path.'modules/translations/backup/i18n/'.$arr_fields['lang'].'/';
+
+	}
+
+	$file_path=$dir_path.$arr_fields['name'].'.php';
+
+	foreach(array_keys($arr_trans) as $key_file_lang)
+	{
+		foreach($arr_trans[$key_file_lang] as $key_trans => $value_trans)
+		{
+
+			$arr_cont_file[]='$lang[\''.$key_file_lang.'\'][\''.$key_trans.'\']=\''.$value_trans.'\';'."\n";
+			
+		}
+
+	}
+
+	$cont_file="<?php\n\n".implode("\n", $arr_cont_file)."\n?>\n";
+	
+	
+	$yes_dir=1;
+
+	if(!file_exists($dir_path))
+	{
+
+		$yes_dir=mkdir($dir_path, 0755, true);
+
+
+	}
+	
+	if(!$yes_dir)
+	{
+		
+		echo '<p>'.$lang['translations']['error_cannot_mkdir'].' '.$dir_path.'</p>';
+		
+		break;
+	
+	}
+
+	$file=fopen ($file_path, 'w');
+
+	if($file!==false) 
+	{
+	
+		echo "<p>--->".$lang['translations']['write_in_lang_file'].": ".$file_path."...</p>\n";
+	
+		if(fwrite($file, $cont_file)==false) 
+		{
+		
+			echo $lang['translations']['error_cannot_write_file'].": $path_lang_file\n";
+			die;
+		
+		}
+	
+		fclose($file);
+	
+	}
+	
+	$arr_modules_selected_in_db[$arr_fields['module']]=1;
+	
+	return $arr_modules_selected_in_db;
 
 }
 

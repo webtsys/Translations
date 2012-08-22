@@ -467,7 +467,7 @@ function Index()
 						
 						ob_start();
 						
-						passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
+						passthru ( 'cp -r '.$dir_path_base.'/*.php '.$dir_path_copy, $return_var );
 						
 						$result_copy=ob_get_contents();
 						
@@ -507,7 +507,7 @@ function Index()
 						
 						ob_start();
 						
-						passthru ( 'cp -r '.$dir_path_base.'/* '.$dir_path_copy, $return_var );
+						passthru ( 'cp -r '.$dir_path_base.'/*.php '.$dir_path_copy, $return_var );
 						
 						$result_copy=ob_get_contents();
 						

@@ -402,7 +402,7 @@ function Index()
 				</p>
 				<?php
 				
-					$module_defined=array();
+					/*$module_defined=array();
 				
 					$query=$model['module']->select('', array('name', 'admin_script'));
 					
@@ -423,8 +423,19 @@ function Index()
 						
 						}
 					
-					}
+					}*/
 					
+					unset($arr_modules ['']);
+					
+					foreach(array_keys($arr_modules) as $module_name)
+					{
+				
+						?><p>
+						<?php echo $module_name; ?>: <?php echo CheckBoxForm('module_selected['.$module_name.']', $class='', 1); ?>
+						</p>
+						<?php
+				
+					}
 				
 				?>
 				<?php set_csrf_key(); ?>
@@ -523,75 +534,6 @@ function Index()
 
 					while($arr_fields=webtsys_fetch_array($query))
 					{
-
-						/*$arr_trans=unserialize($arr_fields['translation']);
-
-						$arr_cont_file=array();
-
-						$dir_path=$base_path.'modules/translations/backup/modules/'.$arr_fields['module'].'/i18n/'.$arr_fields['lang'].'/';
-
-						if($arr_fields['module']=='')
-						{
-
-							$dir_path=$base_path.'modules/translations/backup/i18n/'.$arr_fields['lang'].'/';
-
-						}
-
-						$file_path=$dir_path.$arr_fields['name'].'.php';
-
-						foreach(array_keys($arr_trans) as $key_file_lang)
-						{
-							foreach($arr_trans[$key_file_lang] as $key_trans => $value_trans)
-							{
-
-								$arr_cont_file[]='$lang[\''.$key_file_lang.'\'][\''.$key_trans.'\']=\''.$value_trans.'\';'."\n";
-								
-							}
-
-						}
-
-						$cont_file="<?php\n\n".implode("\n", $arr_cont_file)."\n?>\n";
-						
-						
-						$yes_dir=1;
-
-						if(!file_exists($dir_path))
-						{
-
-							$yes_dir=mkdir($dir_path, 0755, true);
-
-			
-						}
-						
-						if(!$yes_dir)
-						{
-							
-							echo '<p>'.$lang['translations']['error_cannot_mkdir'].' '.$dir_path.'</p>';
-							
-							break;
-						
-						}
-
-						$file=fopen ($file_path, 'w');
-					
-						if($file!==false) 
-						{
-						
-							echo "<p>--->".$lang['translations']['write_in_lang_file'].": ".$file_path."...</p>\n";
-						
-							if(fwrite($file, $cont_file)==false) 
-							{
-							
-								echo $lang['translations']['error_cannot_write_file'].": $path_lang_file\n";
-								die;
-							
-							}
-						
-							fclose($file);
-						
-						}
-						
-						$arr_modules_selected_in_db[$arr_fields['module']]=1;*/
 						
 						$arr_modules_selected_in_db=write_in_lang_file_from_db($arr_fields, $arr_modules_selected_in_db);
 

@@ -371,7 +371,7 @@ function Index()
 
 				if($model['translation']->update($post, 'where name="'.$get['name'].'" and module="'.$get['module'].'" and lang="'.$get['lang'].'"'))
 				{
-
+					
 					ob_end_clean();
 
 					load_libraries(array('redirect'));
@@ -697,10 +697,8 @@ function load_lang_db($module, $file_lang, $language)
 		$query=$model['translation']->insert($post_lang);
 
 	}
-
-	//Ugly hack why php serialize and cannot unserialize a valid string with '.
-
-	$lang_file=unserialize(str_replace("'", "\'", $ser_translation));
+	
+	$lang_file=unserialize($ser_translation);
 	
 	//Upgrade translations with new addings via check_language.php...
 	

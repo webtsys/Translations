@@ -12,7 +12,8 @@ $model['translation']->components['name']->required=1;
 $model['translation']->components['module']=new CharField(255);
 //$model['translation']->components['module']->required=1;
 
-$model['translation']->components['translation']=new SerializeField();
+$model['translation']->components['translation']=new SerializeField('TextHTMLField');
+
 $model['translation']->components['translation']->required=1;
 
 $model['translation']->components['lang']=new CharField(255);

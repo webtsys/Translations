@@ -22,7 +22,7 @@ function TranslationsAdmin()
 	$model['translation_user']->forms['iduser']->form='SelectModelForm';
 	$model['translation_user']->forms['iduser']->parameters=array('iduser', '', '', 'user', 'private_nick', $where='where privileges_user=1 order by private_nick ASC');
 
-	$model['translation_user']->components['iduser']->fields_related_model=array('private_nick');
+	//$model['translation_user']->components['iduser']->fields_related_model=array('private_nick');
 
 	$model['translation_user']->components['iduser']->name_field_to_field='private_nick';
 	
